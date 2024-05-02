@@ -1,5 +1,11 @@
 use scrypto::prelude::*;
 
+#[derive(ScryptoSbor, ScryptoEvent)]
+struct AirdropEvent {
+    coin: ResourceAddress,
+    amount: Decimal,
+}
+
 #[derive(Debug, ScryptoSbor, NonFungibleData)]
 struct StakedFomoData {
     stake_date: Instant,
@@ -10,6 +16,7 @@ struct StakedFomoData {
 
 static STAKED_FOMO_NAME: &str = "Staked FOMO";
 static STAKED_FOMO_ICON: &str = "https://pbs.twimg.com/media/GEfnpcUbIAAoEY8?format=jpg&name=small";
+static MAX_VAULTS: usize = 100;
 
 #[blueprint]
 mod fomo_staking {
@@ -182,6 +189,10 @@ mod fomo_staking {
             match self.coins_list.iter().any(|&i| i == resource_address) {
                 true => self.coins_vaults.get_mut(&resource_address).unwrap().put(coins),
                 false => {
+                    assert!(
+                        self.coins_list.len() < MAX_VAULTS,
+                        "Too many different coins to airdrop!",
+                    );
                     self.coins_vaults.insert(
                         resource_address,
                         Vault::with_bucket(coins)
@@ -189,6 +200,11 @@ mod fomo_staking {
                     self.coins_list.push(resource_address);
                 },
             }
+
+            Runtime::emit_event(AirdropEvent {
+                coin: resource_address,
+                amount: amount,
+            });
         }
     }
 }
