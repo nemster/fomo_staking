@@ -19,7 +19,18 @@ static STAKED_FOMO_ICON: &str = "https://pbs.twimg.com/media/GEfnpcUbIAAoEY8?for
 static MAX_VAULTS: usize = 100;
 
 #[blueprint]
+#[events(AirdropEvent)]
 mod fomo_staking {
+
+    enable_method_auth! {
+        methods {
+            add_stake => PUBLIC;
+            remove_stake => PUBLIC;
+            airdrop => PUBLIC;
+            deposit_rewards => restrict_to: [OWNER];
+            airdrop_deposited_amount => restrict_to: [OWNER];
+        }
+    }
 
     struct FomoStaking {
         fomo_address: ResourceAddress,
@@ -29,6 +40,7 @@ mod fomo_staking {
         staked_fomo_resource_manager: ResourceManager,
         next_staked_fomo_id: u64,
         total_stake_share: PreciseDecimal,
+        future_rewards: Vault,
     }
 
     impl FomoStaking {
@@ -86,6 +98,7 @@ mod fomo_staking {
                 staked_fomo_resource_manager: staked_fomo_resource_manager,
                 next_staked_fomo_id: 1,
                 total_stake_share: PreciseDecimal::ZERO,
+                future_rewards: Vault::new(fomo_address),
             };
 
             fomo_staking.coins_vaults.insert(fomo_address, Vault::new(fomo_address));
@@ -203,6 +216,21 @@ mod fomo_staking {
 
             Runtime::emit_event(AirdropEvent {
                 coin: resource_address,
+                amount: amount,
+            });
+        }
+
+        pub fn deposit_rewards(&mut self, fomo: Bucket) {
+            self.future_rewards.put(fomo);
+        }
+
+        pub fn airdrop_deposited_amount(&mut self, amount: Decimal) {
+            self.coins_vaults.get_mut(&self.fomo_address).unwrap().put(
+                self.future_rewards.take(amount)
+            );
+
+            Runtime::emit_event(AirdropEvent {
+                coin: self.fomo_address,
                 amount: amount,
             });
         }

@@ -1,0 +1,21 @@
+resim reset
+resim new-account
+export account=account_sim1c956qr3kxlgypxwst89j9yf24tjc7zxd4up38x37zr6q4jxdx9rhma
+export owner_badge=resource_sim1nfzf2h73frult99zd060vfcml5kncq3mxpthusm9lkglvhsr0guahy
+resim new-token-fixed 1000
+export coin=resource_sim1t4kwg8fa7ldhwh8exe5w4acjhp9v982svmxp3yqa8ncruad4pf6m22
+resim publish .
+export package=package_sim1ph6xspj0xlmspjju2asxg7xnucy7tk387fufs4jrfwsvt85wvqf70a
+resim call-function ${package} FomoStaking new ${owner_badge} ${coin} 2592000
+export component=component_sim1cqtllx5p8c4s79y2cm4f385mz2pxp8q73fmuhzv358609364q5uudn
+export staked_coin=resource_sim1ngujp6stqy6jnwcv6el9hu9hzne39y870wkyxj4jsnl2s9jpvardat
+resim call-method ${component} deposit_rewards $coin:850 --proofs "${owner_badge}:#1#"
+resim set-current-time 2024-06-02T12:00:00Z
+resim call-method ${component} add_stake $coin:100
+resim call-method ${component} add_stake $coin:50
+resim call-method ${component} airdrop_deposited_amount 100 --proofs "${owner_badge}:#1#"
+resim new-token-fixed 1000
+export coin2=resource_sim1tkw86lvev3vt55hklehu3mrptg6udqgxphs8rpw2qz2pyvdhh3y34j
+resim call-method ${component} airdrop ${coin2}:1000
+resim set-current-time 2024-08-02T12:00:00Z
+resim call-method ${component} remove_stake "${staked_coin}:#1#"

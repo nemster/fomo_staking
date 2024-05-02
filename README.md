@@ -5,7 +5,7 @@ Below are the transaction manifests needed to use the contract:
 ## instantiate (stokenet)
 ```
 CALL_FUNCTION
-  Address("package_tdx_2_1p4prtgrq95e8vssmcg0jwsultu2dc39vt3j53zqmdums4mz8ydfhst")
+  Address("package_tdx_2_1p4xgnn4dad69nq6ls9a5gxm8dt7j29g8vfptwg95mmev5xeyn57g0h")
   "FomoStaking"
   "new"
   Address("<OWNER_BADGE>")
@@ -86,5 +86,49 @@ CALL_METHOD
 	Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
 	"airdrop"
 	Bucket("tokens")
+;
+```
+
+## deposit future rewards
+```
+CALL_METHOD
+  Address("<ACCOUNT>")
+    "create_proof_of_amount"
+    Address("<OWNER_BADGE>")
+    Decimal("1")
+;
+
+CALL_METHOD
+  Address("<ACCOUNT>")
+  "withdraw"
+  Address("<FOMO_RESOURCE_ADDRESS>")
+  Decimal("<AMOUNT>")
+;
+
+TAKE_ALL_FROM_WORKTOP
+  Address("<FOMO_RESOURCE_ADDRESS>")
+  Bucket("tokens")
+;
+
+CALL_METHOD
+  Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+  "deposit_rewards"
+  Bucket("tokens")
+;
+```
+
+## airdrop part of the previosly deposited rewards
+```
+CALL_METHOD
+  Address("<ACCOUNT>")
+  "create_proof_of_amount"
+  Address("<OWNER_BADGE>")
+  Decimal("1")
+;
+
+CALL_METHOD
+  Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+  "airdrop_deposited_amount"
+  Decimal("<AMOUNT>")
 ;
 ```
