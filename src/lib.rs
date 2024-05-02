@@ -135,10 +135,17 @@ mod fomo_staking {
                 "Wrong coin bro",
             );
 
+            let now = Clock::current_time_rounded_to_seconds().seconds_since_unix_epoch;
+            
             let mut stake_share = PreciseDecimal::ZERO;
             for staked_fomo_data in staked_fomo.as_non_fungible().non_fungibles::<StakedFomoData>() {
+                assert!(
+                    now >= staked_fomo_data.data().minimum_unstake_date.seconds_since_unix_epoch,
+                    "Can't unstake now bro",
+                );
                 stake_share += staked_fomo_data.data().stake_share;
             }
+            staked_fomo.burn();
 
             let ratio = stake_share / self.total_stake_share;
             self.total_stake_share -= stake_share;
