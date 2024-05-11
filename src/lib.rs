@@ -12,11 +12,18 @@ struct StakedFomoData {
     minimum_unstake_date: Instant,
     amount_staked: Decimal,
     stake_share: PreciseDecimal,
+    last_airdrop_id: u64,
+}
+
+#[derive(Debug, ScryptoSbor)]
+struct Airdrop {
+    vault: Vault,
+    amount_per_share: PreciseDecimal,
 }
 
 static STAKED_FOMO_NAME: &str = "Staked FOMO";
 static STAKED_FOMO_ICON: &str = "https://pbs.twimg.com/media/GEfnpcUbIAAoEY8?format=jpg&name=small";
-static MAX_VAULTS: usize = 100;
+static MAX_AIRDROPS_PER_USER: u64 = 100;
 
 #[blueprint]
 #[events(AirdropEvent)]
@@ -34,13 +41,13 @@ mod fomo_staking {
 
     struct FomoStaking {
         fomo_vault: Vault,
-        coins_vaults: KeyValueStore<ResourceAddress, Vault>,
-        coins_list: Vec<ResourceAddress>,
+        airdrops: KeyValueStore<u64, Airdrop>,
         minimum_stake_period: i64,
         staked_fomo_resource_manager: ResourceManager,
         next_staked_fomo_id: u64,
         total_stake_share: PreciseDecimal,
         future_rewards: Vault,
+        last_airdrop_id: u64,
     }
 
     impl FomoStaking {
@@ -92,13 +99,13 @@ mod fomo_staking {
 
             Self {
                 fomo_vault: Vault::new(fomo_address),
-                coins_vaults: KeyValueStore::new(),
-                coins_list: vec![],
+                airdrops: KeyValueStore::new(),
                 minimum_stake_period: minimum_stake_period,
                 staked_fomo_resource_manager: staked_fomo_resource_manager,
                 next_staked_fomo_id: 1,
                 total_stake_share: PreciseDecimal::ZERO,
                 future_rewards: Vault::new(fomo_address),
+                last_airdrop_id: 0,
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::Updatable(rule!(require(owner_badge_address))))
@@ -138,6 +145,7 @@ mod fomo_staking {
                     },
                     amount_staked: amount,
                     stake_share: stake_share,
+                    last_airdrop_id: self.last_airdrop_id,
                 }
             );
             self.next_staked_fomo_id += 1;
@@ -153,18 +161,16 @@ mod fomo_staking {
 
             let now = Clock::current_time_rounded_to_seconds().seconds_since_unix_epoch;
             
-            let mut stake_share = PreciseDecimal::ZERO;
-            for staked_fomo_data in staked_fomo.as_non_fungible().non_fungibles::<StakedFomoData>() {
-                assert!(
-                    now >= staked_fomo_data.data().minimum_unstake_date.seconds_since_unix_epoch,
-                    "Can't unstake now bro",
-                );
-                stake_share += staked_fomo_data.data().stake_share;
-            }
+            let staked_fomo_data = staked_fomo.as_non_fungible().non_fungible::<StakedFomoData>().data();
+            assert!(
+                now >= staked_fomo_data.minimum_unstake_date.seconds_since_unix_epoch,
+                "Can't unstake now bro",
+            );
+
             staked_fomo.burn();
 
-            let ratio = stake_share / self.total_stake_share;
-            self.total_stake_share -= stake_share;
+            let ratio = staked_fomo_data.stake_share / self.total_stake_share;
+            self.total_stake_share -= staked_fomo_data.stake_share;
 
             let mut coins = vec![];
             let mut amount = ratio * PreciseDecimal::from(self.fomo_vault.amount());
@@ -174,12 +180,19 @@ mod fomo_staking {
                     WithdrawStrategy::Rounded(RoundingMode::ToZero),
                 )
             );
-            for coin in &self.coins_list {
-                let mut vault = self.coins_vaults.get_mut(&coin).unwrap();
-                amount = ratio * PreciseDecimal::from(vault.amount());
+
+            let first_airdrop_id = staked_fomo_data.last_airdrop_id + 1;
+            let last_airdrop_id = match self.last_airdrop_id < first_airdrop_id + MAX_AIRDROPS_PER_USER {
+                true => self.last_airdrop_id,
+                false => first_airdrop_id + MAX_AIRDROPS_PER_USER - 1,
+            };
+            for airdrop_id in first_airdrop_id..=last_airdrop_id {
+                let mut airdrop = self.airdrops.get_mut(&airdrop_id).unwrap();
+
+                amount = staked_fomo_data.stake_share * airdrop.amount_per_share;
 
                 coins.push(
-                    vault.take_advanced(
+                    airdrop.vault.take_advanced(
                         amount.checked_truncate(RoundingMode::ToZero).unwrap(),
                         WithdrawStrategy::Rounded(RoundingMode::ToZero),
                     )
@@ -202,23 +215,22 @@ mod fomo_staking {
                 "No coin bro",
             );
 
+            assert!(
+                self.staked_fomo_resource_manager.total_supply().unwrap() > Decimal::ZERO,
+                "No one to airdrop to",
+            );
+
             if resource_address == self.fomo_vault.resource_address() {
                 self.fomo_vault.put(coins);
             } else {
-                match self.coins_list.iter().any(|&i| i == resource_address) {
-                    true => self.coins_vaults.get_mut(&resource_address).unwrap().put(coins),
-                    false => {
-                        assert!(
-                            self.coins_list.len() < MAX_VAULTS,
-                            "Too many different coins to airdrop!",
-                        );
-                        self.coins_vaults.insert(
-                            resource_address,
-                            Vault::with_bucket(coins)
-                        );
-                        self.coins_list.push(resource_address);
-                    },
-                }
+                self.last_airdrop_id += 1;
+                self.airdrops.insert(
+                    self.last_airdrop_id,
+                    Airdrop {
+                        vault: Vault::with_bucket(coins),
+                        amount_per_share: amount / self.total_stake_share,
+                    }
+                );
             }
 
             Runtime::emit_event(AirdropEvent {
@@ -232,6 +244,11 @@ mod fomo_staking {
         }
 
         pub fn airdrop_deposited_amount(&mut self, amount: Decimal) {
+            assert!(
+                self.staked_fomo_resource_manager.total_supply().unwrap() > Decimal::ZERO,
+                "No one to airdrop to",
+            );
+
             self.fomo_vault.put(
                 self.future_rewards.take(amount)
             );
