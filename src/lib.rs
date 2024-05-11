@@ -33,7 +33,7 @@ mod fomo_staking {
     }
 
     struct FomoStaking {
-        fomo_address: ResourceAddress,
+        fomo_vault: Vault,
         coins_vaults: KeyValueStore<ResourceAddress, Vault>,
         coins_list: Vec<ResourceAddress>,
         minimum_stake_period: i64,
@@ -90,20 +90,17 @@ mod fomo_staking {
             ))
             .create_with_no_initial_supply();
 
-            let fomo_staking = Self {
-                fomo_address: fomo_address,
+            Self {
+                fomo_vault: Vault::new(fomo_address),
                 coins_vaults: KeyValueStore::new(),
-                coins_list: vec![fomo_address],
+                coins_list: vec![],
                 minimum_stake_period: minimum_stake_period,
                 staked_fomo_resource_manager: staked_fomo_resource_manager,
                 next_staked_fomo_id: 1,
                 total_stake_share: PreciseDecimal::ZERO,
                 future_rewards: Vault::new(fomo_address),
-            };
-
-            fomo_staking.coins_vaults.insert(fomo_address, Vault::new(fomo_address));
-
-            fomo_staking.instantiate()
+            }
+            .instantiate()
             .prepare_to_globalize(OwnerRole::Updatable(rule!(require(owner_badge_address))))
             .with_address(address_reservation)
             .globalize()
@@ -111,7 +108,7 @@ mod fomo_staking {
 
         pub fn add_stake(&mut self, fomo: Bucket) -> Bucket {
             assert!(
-                fomo.resource_address() == self.fomo_address,
+                fomo.resource_address() == self.fomo_vault.resource_address(),
                 "Wrong coin bro",
             );
 
@@ -121,9 +118,8 @@ mod fomo_staking {
                 "No coin bro",
             );
 
-            let mut vault = self.coins_vaults.get_mut(&self.fomo_address).unwrap();
-            let vault_amount = vault.amount();
-            vault.put(fomo);
+            let vault_amount = self.fomo_vault.amount();
+            self.fomo_vault.put(fomo);
 
             let mut stake_share = PreciseDecimal::ONE;
             if vault_amount > Decimal::ZERO {
@@ -171,9 +167,16 @@ mod fomo_staking {
             self.total_stake_share -= stake_share;
 
             let mut coins = vec![];
+            let mut amount = ratio * PreciseDecimal::from(self.fomo_vault.amount());
+            coins.push(
+                self.fomo_vault.take_advanced(
+                    amount.checked_truncate(RoundingMode::ToZero).unwrap(),
+                    WithdrawStrategy::Rounded(RoundingMode::ToZero),
+                )
+            );
             for coin in &self.coins_list {
                 let mut vault = self.coins_vaults.get_mut(&coin).unwrap();
-                let amount = ratio * PreciseDecimal::from(vault.amount());
+                amount = ratio * PreciseDecimal::from(vault.amount());
 
                 coins.push(
                     vault.take_advanced(
@@ -199,19 +202,23 @@ mod fomo_staking {
                 "No coin bro",
             );
 
-            match self.coins_list.iter().any(|&i| i == resource_address) {
-                true => self.coins_vaults.get_mut(&resource_address).unwrap().put(coins),
-                false => {
-                    assert!(
-                        self.coins_list.len() < MAX_VAULTS,
-                        "Too many different coins to airdrop!",
-                    );
-                    self.coins_vaults.insert(
-                        resource_address,
-                        Vault::with_bucket(coins)
-                    );
-                    self.coins_list.push(resource_address);
-                },
+            if resource_address == self.fomo_vault.resource_address() {
+                self.fomo_vault.put(coins);
+            } else {
+                match self.coins_list.iter().any(|&i| i == resource_address) {
+                    true => self.coins_vaults.get_mut(&resource_address).unwrap().put(coins),
+                    false => {
+                        assert!(
+                            self.coins_list.len() < MAX_VAULTS,
+                            "Too many different coins to airdrop!",
+                        );
+                        self.coins_vaults.insert(
+                            resource_address,
+                            Vault::with_bucket(coins)
+                        );
+                        self.coins_list.push(resource_address);
+                    },
+                }
             }
 
             Runtime::emit_event(AirdropEvent {
@@ -225,12 +232,12 @@ mod fomo_staking {
         }
 
         pub fn airdrop_deposited_amount(&mut self, amount: Decimal) {
-            self.coins_vaults.get_mut(&self.fomo_address).unwrap().put(
+            self.fomo_vault.put(
                 self.future_rewards.take(amount)
             );
 
             Runtime::emit_event(AirdropEvent {
-                coin: self.fomo_address,
+                coin: self.fomo_vault.resource_address(),
                 amount: amount,
             });
         }
