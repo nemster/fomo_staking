@@ -15,10 +15,10 @@ When a user unstakes (remove\_stake) he can't receive more than MAX\_BUCKETS (10
 
 ## Below are the transaction manifests needed to use this contract:
 
-### Instantiate (Stokenet)
+### Instantiate (Mainnet)
 ```
 CALL_FUNCTION
-  Address("")
+  Address("package_rdx1p47clzt78ygeynfcrprphwrjnyuue5kprgaewss92es5tf4eu3xs9v")
   "FomoStaking"
   "new"
   Address("<OWNER_BADGE>")
