@@ -43,6 +43,7 @@ static MAX_BUCKETS: usize = 100;
 
 #[blueprint]
 #[events(AirdropEvent)]
+#[types(u64,Airdrop,StakedFomoData)]
 mod fomo_staking {
 
     enable_method_auth! {
@@ -119,7 +120,7 @@ mod fomo_staking {
                 Runtime::allocate_component_address(FomoStaking::blueprint_id());
 
             // Create a ResourceManager for minting staking receipts
-            let staked_fomo_resource_manager = ResourceBuilder::new_integer_non_fungible::<StakedFomoData>(
+            let staked_fomo_resource_manager = ResourceBuilder::new_integer_non_fungible_with_registered_type::<StakedFomoData>(
                 OwnerRole::Updatable(rule!(require(owner_badge_address)))
             )
             .metadata(metadata!(
@@ -152,7 +153,7 @@ mod fomo_staking {
             Self {
                 fomo_vault: Vault::new(fomo_address),
                 vaults: KeyValueStore::new(),
-                airdrops: KeyValueStore::new(),
+                airdrops: KeyValueStore::new_with_registered_type(),
                 minimum_stake_period: minimum_stake_period,
                 staked_fomo_resource_manager: staked_fomo_resource_manager,
                 next_staked_fomo_id: 1,
