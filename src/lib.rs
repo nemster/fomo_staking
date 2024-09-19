@@ -262,7 +262,7 @@ mod fomo_staking {
             // For each non FOMO airdrop happened during the staking period
             for airdrop_id in staked_fomo_data.last_airdrop_id + 1 ..= self.last_airdrop_id {
                 // Find the airdrop information
-                let airdrop = self.airdrops.get_mut(&airdrop_id).unwrap();
+                let airdrop = self.airdrops.get(&airdrop_id).unwrap();
 
                 // Compute the amount this user must receive
                 amount = staked_fomo_data.stake_share * airdrop.amount_per_share;
