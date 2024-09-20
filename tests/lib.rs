@@ -1,14 +1,13 @@
-use radix_engine_interface::prelude::*;
-use scrypto::this_package;
 use scrypto_test::prelude::*;
 
-use fomo_staking::test_bindings::*;
+use fomo_staking::fomo_staking_test::*;
 
 #[test]
 fn test_fomo_staking() -> Result<(), RuntimeError> {
     let mut env = TestEnvironment::new();
     env.disable_auth_module();
-    let package_address = Package::compile_and_publish(this_package!(), &mut env)?;
+    let package_address =
+        PackageFactory::compile_and_publish(this_package!(), &mut env, CompileProfile::Fast)?;
 
     // Create FOMO owner badge
     let badge_bucket = ResourceBuilder::new_fungible(OwnerRole::None)
@@ -83,6 +82,7 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     // Unstake staked FOMO and check the amounts (a small rounding error is acceptable)
     let vec_of_buckets1 = fomo_staking.remove_stake(
         staked_fomo_bucket1,
+        vec![],
         &mut env
     )?;
     let fomo_received1 = vec_of_buckets1[0].amount(&mut env)?;
@@ -101,6 +101,7 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     // Unstake staked FOMO and check the amounts (a small rounding error is acceptable)
     let vec_of_buckets2 = fomo_staking.remove_stake(
         staked_fomo_bucket2,
+        vec![],
         &mut env
     )?;
     let fomo_received2 = vec_of_buckets2[0].amount(&mut env)?;
@@ -119,6 +120,7 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     // Unstake staked FOMO and check the amounts (a small rounding error is acceptable)
     let vec_of_buckets3 = fomo_staking.remove_stake(
         staked_fomo_bucket3,
+        vec![],
         &mut env
     )?;
     let fomo_received3 = vec_of_buckets3[0].amount(&mut env)?;
@@ -137,6 +139,7 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     // Unstake staked FOMO and check the amounts (a small rounding error is acceptable)
     let vec_of_buckets4 = fomo_staking.remove_stake(
         staked_fomo_bucket4,
+        vec![],
         &mut env
     )?;
     let fomo_received4 = vec_of_buckets4[0].amount(&mut env)?;

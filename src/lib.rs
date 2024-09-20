@@ -220,11 +220,21 @@ mod fomo_staking {
             staked_fomo
         }
 
-        pub fn remove_stake(&mut self, staked_fomo: Bucket) -> Vec<Bucket> {
+        pub fn remove_stake(
+            &mut self,
+            staked_fomo: Bucket,
+            ignored_coins: Vec<ResourceAddress>
+        ) -> Vec<Bucket> {
             // Make sure staked_fomo is a staking receipt
             assert!(
                 staked_fomo.resource_address() == self.staked_fomo_resource_manager.address(),
                 "Wrong coin bro",
+            );
+
+            // Make sure FOMO is not one of the ignored_coins
+            assert!(
+                ignored_coins.iter().position(|&r| r == self.fomo_vault.resource_address()).is_none(),
+                "You can't ignore FOMO!",
             );
 
             // Read NonFungibleData from the bucket (it must contain exactly 1 staking receipt)
@@ -264,19 +274,23 @@ mod fomo_staking {
                 // Find the airdrop information
                 let airdrop = self.airdrops.get(&airdrop_id).unwrap();
 
-                // Compute the amount this user must receive
-                amount = staked_fomo_data.stake_share * airdrop.amount_per_share;
+                // If this coin doesn't have to be ignored
+                if ignored_coins.iter().position(|&r| r == airdrop.coin).is_none() {
 
-                // Is this coin already in the totals HashMap?
-                if totals.get(&airdrop.coin).is_some() {
-                    // If so, put the coins in this bucket
-                    *totals.get_mut(&airdrop.coin).unwrap() += amount;
-                } else {
-                    // If not, can we create another one without exceeding MAX_BUCKETS?
-                    if totals.len() < MAX_BUCKETS {
-                        // If so, add a new element to totals
-                        totals.insert(airdrop.coin, amount);
-                    } // Otherwise those coins are lost forever :-(
+                    // Compute the amount this user must receive
+                    amount = staked_fomo_data.stake_share * airdrop.amount_per_share;
+
+                    // Is this coin already in the totals HashMap?
+                    if totals.get(&airdrop.coin).is_some() {
+                        // If so, put the coins in this bucket
+                        *totals.get_mut(&airdrop.coin).unwrap() += amount;
+                    } else {
+                        // If not, can we create another one without exceeding MAX_BUCKETS?
+                        if totals.len() < MAX_BUCKETS {
+                            // If so, add a new element to totals
+                            totals.insert(airdrop.coin, amount);
+                        } // Otherwise those coins are lost forever :-(
+                    }
                 }
             }
 

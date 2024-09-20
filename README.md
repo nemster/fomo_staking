@@ -18,118 +18,119 @@ When a user unstakes (remove\_stake) he can't receive more than MAX\_BUCKETS (10
 ### Instantiate (Mainnet)
 ```
 CALL_FUNCTION
-  Address("package_rdx1p47clzt78ygeynfcrprphwrjnyuue5kprgaewss92es5tf4eu3xs9v")
-  "FomoStaking"
-  "new"
-  Address("<OWNER_BADGE>")
-  Address("<FOMO_RESOURCE_ADDRESS>")
-  <MINIMUM_STAKE_PERIOD>i64
+    Address("package_rdx1p47clzt78ygeynfcrprphwrjnyuue5kprgaewss92es5tf4eu3xs9v")
+    "FomoStaking"
+    "new"
+    Address("<OWNER_BADGE>")
+    Address("<FOMO_RESOURCE_ADDRESS>")
+    <MINIMUM_STAKE_PERIOD>i64
 ;
 ```
 
 ### Add stake
 ```
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "withdraw"
-  Address("<FOMO_RESOURCE_ADDRESS>")
-  Decimal("<AMOUNT_TO_STAKE>")
+    Address("<ACCOUNT>")
+    "withdraw"
+    Address("<FOMO_RESOURCE_ADDRESS>")
+    Decimal("<AMOUNT_TO_STAKE>")
 ;
 TAKE_ALL_FROM_WORKTOP
-  Address("<FOMO_RESOURCE_ADDRESS>")
-  Bucket("tokens")
+    Address("<FOMO_RESOURCE_ADDRESS>")
+    Bucket("tokens")
 ;
 CALL_METHOD
-	Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
-	"add_stake"
-	Bucket("tokens")
+    Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+    "add_stake"
+    Bucket("tokens")
 ;
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "deposit_batch"
-  Expression("ENTIRE_WORKTOP")
+    Address("<ACCOUNT>")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP")
 ;
 ```
 
 ### Remove stake
 ```
 CALL_METHOD
-  Address("<ACCOUNT>>")
-  "withdraw_non_fungibles"
-  Address("<STAKED_FOMO_RESOURCE_ADDRESS>")
-  Array<NonFungibleLocalId>(NonFungibleLocalId("#<STAKED_FOMO_ID>#"))
+    Address("<ACCOUNT>>")
+    "withdraw_non_fungibles"
+    Address("<STAKED_FOMO_RESOURCE_ADDRESS>")
+    Array<NonFungibleLocalId>(NonFungibleLocalId("#<STAKED_FOMO_ID>#"))
 ;
 TAKE_ALL_FROM_WORKTOP
-  Address("<STAKED_FOMO_RESOURCE_ADDRESS>")
-  Bucket("tokens")
+    Address("<STAKED_FOMO_RESOURCE_ADDRESS>")
+    Bucket("tokens")
 ;
 CALL_METHOD
-	Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
-	"remove_stake"
-	Bucket("tokens")
+    Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+    "remove_stake"
+    Bucket("tokens")
+    Array<Address>(Address("<RESOURCE_ADDRESS_TO_IGNORE>"), ...)
 ;
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "deposit_batch"
-  Expression("ENTIRE_WORKTOP")
+    Address("<ACCOUNT>")
+    "deposit_batch"
+    Expression("ENTIRE_WORKTOP")
 ;
 ```
 
 ### Airdrop any fungible
 ```
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "withdraw"
-  Address("<RESOURCE_ADDRESS_TO_AIRDROP>")
-  Decimal("<AMOUNT_TO_AIRDROP>")
+    Address("<ACCOUNT>")
+    "withdraw"
+    Address("<RESOURCE_ADDRESS_TO_AIRDROP>")
+    Decimal("<AMOUNT_TO_AIRDROP>")
 ;
 TAKE_ALL_FROM_WORKTOP
-  Address("<RESOURCE_ADDRESS_TO_AIRDROP>")
-  Bucket("tokens")
+    Address("<RESOURCE_ADDRESS_TO_AIRDROP>")
+    Bucket("tokens")
 ;
 CALL_METHOD
-	Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
-	"airdrop"
-	Bucket("tokens")
+    Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+    "airdrop"
+    Bucket("tokens")
 ;
 ```
 
 ### Deposit future rewards (owner only)
 ```
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "create_proof_of_amount"
-  Address("<OWNER_BADGE>")
-  Decimal("1")
+    Address("<ACCOUNT>")
+    "create_proof_of_amount"
+    Address("<OWNER_BADGE>")
+    Decimal("1")
 ;
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "withdraw"
-  Address("<FOMO_RESOURCE_ADDRESS>")
-  Decimal("<AMOUNT>")
+    Address("<ACCOUNT>")
+    "withdraw"
+    Address("<FOMO_RESOURCE_ADDRESS>")
+    Decimal("<AMOUNT>")
 ;
 TAKE_ALL_FROM_WORKTOP
-  Address("<FOMO_RESOURCE_ADDRESS>")
-  Bucket("tokens")
+    Address("<FOMO_RESOURCE_ADDRESS>")
+    Bucket("tokens")
 ;
 CALL_METHOD
-  Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
-  "deposit_rewards"
-  Bucket("tokens")
+    Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+    "deposit_rewards"
+    Bucket("tokens")
 ;
 ```
 
 ### Distribute part of the previosly deposited rewards (owner only)
 ```
 CALL_METHOD
-  Address("<ACCOUNT>")
-  "create_proof_of_amount"
-  Address("<OWNER_BADGE>")
-  Decimal("1")
+    Address("<ACCOUNT>")
+    "create_proof_of_amount"
+    Address("<OWNER_BADGE>")
+    Decimal("1")
 ;
 CALL_METHOD
-  Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
-  "airdrop_deposited_amount"
-  Decimal("<AMOUNT>")
+    Address("<FOMO_STAKING_COMPONENT_ADDRESS>")
+    "airdrop_deposited_amount"
+    Decimal("<AMOUNT>")
 ;
 ```
