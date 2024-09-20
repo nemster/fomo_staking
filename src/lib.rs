@@ -39,7 +39,7 @@ static STAKED_FOMO_ICON: &str = "https://pbs.twimg.com/media/GEfnpcUbIAAoEY8?for
 
 // Maximum number of buckets the remove_stake method will return.
 // Raising this limit may cause transactions to fail
-static MAX_BUCKETS: usize = 100;
+static MAX_BUCKETS: usize = 80;
 
 #[blueprint]
 #[events(AirdropEvent)]

@@ -1,7 +1,7 @@
 CALL_METHOD
 	Address("${account}")
 	"lock_fee"
-	Decimal("5")
+	Decimal("10")
 ;
 CALL_METHOD
 	Address("${account}")

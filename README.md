@@ -11,7 +11,7 @@
 
 ## Known limitations
 
-When a user unstakes (remove\_stake) he can't receive more than MAX\_BUCKETS (100) different coins because of limitations on the number of events in a Radix transaction.  
+When a user unstakes (remove\_stake) he can't receive more than MAX\_BUCKETS (80) different coins because of limitations on the number of events in a Radix transaction.  
 
 ## Below are the transaction manifests needed to use this contract:
 
