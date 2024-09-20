@@ -14,16 +14,22 @@ struct StakedFomoData {
     stake_date: Instant,
 
     // Can not be unstaked before this date
+    #[mutable]
     minimum_unstake_date: Instant,
 
     // How many FOMO have been staked
     amount_staked: Decimal,
 
     // A number user to split rewards among the stakers
+    #[mutable]
     stake_share: PreciseDecimal,
 
     // This receipt only allows receiving rewards for airdrops happening after this one
+    #[mutable]
     last_airdrop_id: u64,
+
+    #[mutable]
+    key_image_url: Url,
 }
 
 // A struct to store coins and information about non FOMO airdrops happened
@@ -137,7 +143,7 @@ mod fomo_staking {
             ))
             .mint_roles(mint_roles!(
                 minter => rule!(require(global_caller(component_address)));
-                minter_updater => rule!(deny_all);
+                minter_updater => rule!(require(owner_badge_address));
             ))
             .non_fungible_data_update_roles(non_fungible_data_update_roles!(
                 non_fungible_data_updater => rule!(require(global_caller(component_address)));
@@ -145,7 +151,7 @@ mod fomo_staking {
             ))
             .burn_roles(burn_roles!(
                 burner => rule!(require(global_caller(component_address)));
-                burner_updater => rule!(deny_all);
+                burner_updater => rule!(require(owner_badge_address));
             ))
             .create_with_no_initial_supply();
 
@@ -210,6 +216,7 @@ mod fomo_staking {
                     amount_staked: amount,
                     stake_share: stake_share,
                     last_airdrop_id: self.last_airdrop_id,
+                    key_image_url: UncheckedUrl(STAKED_FOMO_ICON.to_string()),
                 }
             );
 
