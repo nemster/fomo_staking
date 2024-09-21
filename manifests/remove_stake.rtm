@@ -19,6 +19,7 @@ CALL_METHOD
 	Bucket("tokens")
 	Array<Address>(${ignore_coins})
 	${max_airdrops}u64
+	${no_fomo}
 ;
 CALL_METHOD
 	Address("${account}")

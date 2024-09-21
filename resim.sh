@@ -90,30 +90,21 @@ echo
 resim set-current-time 2024-08-02T12:00:00Z
 
 echo
-resim new-account >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
-export account=$(grep 'Account component address:' $OUTPUTFILE | cut -d ' ' -f 4)
-export private_key=$(grep 'Private key:' $OUTPUTFILE | cut -d ':' -f 2)
-export owner_badge=$(grep 'Owner badge:' $OUTPUTFILE | cut -d ' ' -f 3)
-echo Account address: $account
-resim transfer "$staked_fomo:#${nft_id1}#,#${nft_id2}#,#${nft_id3}#" $account >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
-resim set-default-account $account ${private_key} ${owner_badge}
-echo NFTs trasferred to $account
-
-echo
 export nft_id=${nft_id1}
 export ignore_coins="Address(\"$coin3\")"
 export max_airdrops=350
+export no_fomo=true
 resim run manifests/remove_stake.rtm >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
 export events=$(grep Event: $OUTPUTFILE | wc -l)
 export fee_paid=$(grep -A 1 resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3 $OUTPUTFILE | grep 'Change: -' | cut -d - -f 2)
-echo "NFT #${nft_id}# unstaked, max_airdrops ${max_airdrops}, $events events, XRD ${fee_paid} fee paid "
+echo "NFT #${nft_id}# unstaked, ignore_coins ${ignore_coins}, max_airdrops ${max_airdrops}, no_fomo ${no_fomo}, $events events, XRD ${fee_paid} fee paid "
 export fomo_received=$(grep -A 1 "ResAddr: $fomo" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export coin2_received=$(grep -A 1 "ResAddr: $coin2" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export coin3_received=$(grep -A 1 "ResAddr: $coin3" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
-echo "FOMO received: ${fomo_received} (should be $stake1), COIN2 received: ${coin2_received} (should be ${coin2_1}), COIN3 received: ${coin3_received} (should be zero)"
+echo "FOMO received: ${fomo_received} (should be zero), COIN2 received: ${coin2_received} (should be about ${coin2_1}), COIN3 received: ${coin3_received} (should be zero)"
 
 echo
-export iterations4=80
+export iterations4=79
 export airdrops4=4
 for i in $(seq 1 $iterations4)
 do
@@ -131,29 +122,49 @@ echo
 export nft_id=${nft_id3}
 export ignore_coins=""
 export max_airdrops=350
+export no_fomo=false
 resim run manifests/remove_stake.rtm >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
 export events=$(grep Event: $OUTPUTFILE | wc -l)
 export fee_paid=$(grep -A 1 resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3 $OUTPUTFILE | grep 'Change: -' | cut -d - -f 2)
-echo "NFT #${nft_id}# unstaked, max_airdrops ${max_airdrops}, $events events, XRD ${fee_paid} fee paid "
+echo "NFT #${nft_id}# unstaked, ignore_coins ${ignore_coins}, max_airdrops ${max_airdrops}, no_fomo ${no_fomo}, $events events, XRD ${fee_paid} fee paid"
 export fomo_received=$(grep -A 1 "ResAddr: $fomo" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export coin2_received=$(grep -A 1 "ResAddr: $coin2" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export coin3_received=$(grep -A 1 "ResAddr: $coin3" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
-echo "FOMO received: ${fomo_received} (should be 250), COIN2 received: ${coin2_received} (should be zero), COIN3 received: ${coin3_received} (should be ${coin3_3})"
+echo "FOMO received: ${fomo_received} (should be about $stake3), COIN2 received: ${coin2_received} (should be zero), COIN3 received: ${coin3_received} (should be about ${coin3_3})"
 
 echo
 export nft_id=${nft_id2}
 export ignore_coins=""
 export max_airdrops=350
+export no_fomo=false
 resim run manifests/remove_stake.rtm >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
 export events=$(grep Event: $OUTPUTFILE | wc -l)
 export fee_paid=$(grep -A 1 resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3 $OUTPUTFILE | grep 'Change: -' | cut -d - -f 2)
-echo "NFT #${nft_id}# unstaked, max_airdrops ${max_airdrops}, $events events, XRD ${fee_paid} fee paid "
+echo "NFT #${nft_id}# unstaked, ignore_coins ${ignore_coins}, max_airdrops ${max_airdrops}, no_fomo ${no_fomo}, $events events, XRD ${fee_paid} fee paid"
+export fomo_received=$(grep -A 1 "ResAddr: $fomo" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export coin2_received=$(grep -A 1 "ResAddr: $coin2" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export coin3_received=$(grep -A 1 "ResAddr: $coin3" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
-echo "COIN2 received: ${coin2_received} (should be ${coin2_2}), COIN3 received: ${coin3_received} (should be ${coin3_2})"
+echo "FOMO received: ${fomo_received} (should be zero), COIN2 received: ${coin2_received} (should be about ${coin2_2}), COIN3 received: ${coin3_received} (should be about ${coin3_2})"
 resim run manifests/remove_stake.rtm >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
 export fomo_received=$(grep -A 1 "ResAddr: $fomo" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
 export events=$(grep Event: $OUTPUTFILE | wc -l)
 export fee_paid=$(grep -A 1 resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3 $OUTPUTFILE | grep 'Change: -' | cut -d - -f 2)
-echo "NFT #${nft_id}# unstaked again, max_airdrops ${max_airdrops}, $events events, XRD ${fee_paid} fee paid "
-echo "FOMO received: ${fomo_received} (should be $stake2)"
+echo "NFT #${nft_id}# unstaked again, ignore_coins ${ignore_coins}, max_airdrops ${max_airdrops}, no_fomo ${no_fomo}, $events events, XRD ${fee_paid} fee paid"
+echo "FOMO received: ${fomo_received} (should be about $stake2)"
+
+echo
+resim call-method ${component} airdrop_deposited_amount $airdrop1 --proofs "${owner_badge}:#1#" >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
+export stake1=$(($stake1 + $airdrop1))
+echo $airdrop1 FOMO airdropped
+
+echo
+export nft_id=${nft_id1}
+export ignore_coins=""
+export max_airdrops=350
+export no_fomo=false
+resim run manifests/remove_stake.rtm >$OUTPUTFILE || ( cat $OUTPUTFILE ; exit 1 )
+export fomo_received=$(grep -A 1 "ResAddr: $fomo" $OUTPUTFILE | tail -n 1 | cut -d : -f 2)
+export events=$(grep Event: $OUTPUTFILE | wc -l)
+export fee_paid=$(grep -A 1 resource_sim1tknxxxxxxxxxradxrdxxxxxxxxx009923554798xxxxxxxxxakj8n3 $OUTPUTFILE | grep 'Change: -' | cut -d - -f 2)
+echo "NFT #${nft_id}# unstaked again, ignore_coins ${ignore_coins}, max_airdrops ${max_airdrops}, no_fomo ${no_fomo}, $events events, XRD ${fee_paid} fee paid"
+echo "FOMO received: ${fomo_received} (should be about $stake1)"

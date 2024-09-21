@@ -8,10 +8,13 @@
 * Staking receipts are non fungible
 * At each reward distribution an AirdropEvent is issued
 * The add\_stake method is compatible with SelfiSocial guidelines
+* It allows stakers to withdraw airdrops without unstaking their FOMO (NO\_FOMO parameter)
+* It allows stakers to refuse some coins via the `Array<Address>(Address("<RESOURCE_ADDRESS_TO_IGNORE>"), ...)` parameter when withdrawing rewards
 
 ## Known limitations
 
-When a user unstakes (remove\_stake) he can't receive more than MAX\_BUCKETS (80) different coins because of limitations on the number of events in a Radix transaction.  
+* When a user unstakes (remove\_stake) he can't receive more than MAX\_BUCKETS (80) different coins.
+* When calling remove\_stake it is not advisable to set max\_airdrops to a value higher than 350.
 
 ## Below are the transaction manifests needed to use this contract:
 
@@ -69,6 +72,8 @@ CALL_METHOD
     "remove_stake"
     Bucket("tokens")
     Array<Address>(Address("<RESOURCE_ADDRESS_TO_IGNORE>"), ...)
+    <MAX_AIRDROPS>u64
+    <NO_FOMO>
 ;
 CALL_METHOD
     Address("<ACCOUNT>")
