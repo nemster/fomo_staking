@@ -58,6 +58,7 @@ CALL_METHOD
     "withdraw_non_fungibles"
     Address("<STAKED_FOMO_RESOURCE_ADDRESS>")
     Array<NonFungibleLocalId>(NonFungibleLocalId("#<STAKED_FOMO_ID>#"))
+    <MAX_AIRDROPS>u64
 ;
 TAKE_ALL_FROM_WORKTOP
     Address("<STAKED_FOMO_RESOURCE_ADDRESS>")

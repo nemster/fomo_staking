@@ -18,6 +18,7 @@ CALL_METHOD
 	"remove_stake"
 	Bucket("tokens")
 	Array<Address>(${ignore_coins})
+	${max_airdrops}u64
 ;
 CALL_METHOD
 	Address("${account}")

@@ -10,6 +10,8 @@ struct AirdropEvent {
 // NonFungibleData for the staking receipt
 #[derive(Debug, ScryptoSbor, NonFungibleData)]
 struct StakedFomoData {
+    id: u64,
+
     // When stake happened
     stake_date: Instant,
 
@@ -209,6 +211,7 @@ mod fomo_staking {
             let staked_fomo = self.staked_fomo_resource_manager.mint_non_fungible(
                 &NonFungibleLocalId::integer(self.next_staked_fomo_id.into()),
                 StakedFomoData {
+                    id: self.next_staked_fomo_id,
                     stake_date: now,
                     minimum_unstake_date: Instant {
                         seconds_since_unix_epoch: now.seconds_since_unix_epoch + self.minimum_stake_period,
@@ -230,7 +233,8 @@ mod fomo_staking {
         pub fn remove_stake(
             &mut self,
             staked_fomo: Bucket,
-            ignored_coins: Vec<ResourceAddress>
+            ignored_coins: Vec<ResourceAddress>,
+            max_airdrops: u64,
         ) -> Vec<Bucket> {
             // Make sure staked_fomo is a staking receipt
             assert!(
@@ -254,30 +258,50 @@ mod fomo_staking {
                 "Can't unstake now bro",
             );
 
-            // Burn the staking receipt
-            staked_fomo.burn();
-
-            // Compute the % of total FOMO to be unstaked and update total_stake_share accordingly
-            let ratio = staked_fomo_data.stake_share / self.total_stake_share;
-            self.total_stake_share -= staked_fomo_data.stake_share;
-
             // Prepare a vector for all of the buckets to return
             let mut coins: Vec<Bucket> = vec![];
 
-            // Create the FOMO bucket and add it to the vector
-            let mut amount = ratio * PreciseDecimal::from(self.fomo_vault.amount());
-            coins.push(
-                self.fomo_vault.take_advanced(
-                    amount.checked_truncate(RoundingMode::ToZero).unwrap(),
-                    WithdrawStrategy::Rounded(RoundingMode::ToZero),
-                )
-            );
+            let mut last_airdrop_to_process = self.last_airdrop_id;
+
+            if max_airdrops < self.last_airdrop_id - staked_fomo_data.last_airdrop_id {
+                // If too many airdrops happened, limit the number of processed airdrops, update
+                // the staking NFT and return it to the user.
+                // No FOMO are returned in this case.
+
+                last_airdrop_to_process = staked_fomo_data.last_airdrop_id + max_airdrops;
+
+                self.staked_fomo_resource_manager.update_non_fungible_data(
+                    &NonFungibleLocalId::integer(staked_fomo_data.id),
+                    "last_airdrop_id",
+                    last_airdrop_to_process,
+                );
+
+                coins.push(staked_fomo);
+            } else {
+                // If the number of airdrops is manageable, burn the staking NFT and return the staked
+                // FOMO
+
+                staked_fomo.burn();
+
+                // Compute the % of total FOMO to be unstaked and update total_stake_share accordingly
+                let ratio = staked_fomo_data.stake_share / self.total_stake_share;
+                self.total_stake_share -= staked_fomo_data.stake_share;
+
+                // Create the FOMO bucket and add it to the vector
+                let amount = ratio * PreciseDecimal::from(self.fomo_vault.amount());
+                coins.push(
+                    self.fomo_vault.take_advanced(
+                        amount.checked_truncate(RoundingMode::ToZero).unwrap(),
+                        WithdrawStrategy::Rounded(RoundingMode::ToZero),
+                    )
+                );
+            }
 
             // Prepare a HashMap to store the total the user must receive per each non FOMO coin
             let mut totals: HashMap<ResourceAddress, PreciseDecimal> = HashMap::with_capacity(MAX_BUCKETS);
 
             // For each non FOMO airdrop happened during the staking period
-            for airdrop_id in staked_fomo_data.last_airdrop_id + 1 ..= self.last_airdrop_id {
+            for airdrop_id in staked_fomo_data.last_airdrop_id + 1 ..= last_airdrop_to_process {
                 // Find the airdrop information
                 let airdrop = self.airdrops.get(&airdrop_id).unwrap();
 
@@ -285,7 +309,7 @@ mod fomo_staking {
                 if ignored_coins.iter().position(|&r| r == airdrop.coin).is_none() {
 
                     // Compute the amount this user must receive
-                    amount = staked_fomo_data.stake_share * airdrop.amount_per_share;
+                    let amount = staked_fomo_data.stake_share * airdrop.amount_per_share;
 
                     // Is this coin already in the totals HashMap?
                     if totals.get(&airdrop.coin).is_some() {
