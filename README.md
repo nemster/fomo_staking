@@ -18,10 +18,10 @@
 
 ## Below are the transaction manifests needed to use this contract:
 
-### Instantiate (Mainnet)
+### Instantiate (Stokenet)
 ```
 CALL_FUNCTION
-    Address("package_rdx1p47clzt78ygeynfcrprphwrjnyuue5kprgaewss92es5tf4eu3xs9v")
+    Address("package_tdx_2_1p5e9dr50w7f7ttfcnf6f9skx7mtpwzttpgykv5zhlxveehc2a3xxa6")
     "FomoStaking"
     "new"
     Address("<OWNER_BADGE>")
