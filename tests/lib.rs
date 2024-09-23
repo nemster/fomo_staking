@@ -83,6 +83,8 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     let vec_of_buckets1 = fomo_staking.remove_stake(
         staked_fomo_bucket1,
         vec![],
+        350,
+        false,
         &mut env
     )?;
     let fomo_received1 = vec_of_buckets1[0].amount(&mut env)?;
@@ -102,6 +104,8 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     let vec_of_buckets2 = fomo_staking.remove_stake(
         staked_fomo_bucket2,
         vec![],
+        350,
+        false,
         &mut env
     )?;
     let fomo_received2 = vec_of_buckets2[0].amount(&mut env)?;
@@ -121,6 +125,8 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     let vec_of_buckets3 = fomo_staking.remove_stake(
         staked_fomo_bucket3,
         vec![],
+        350,
+        false,
         &mut env
     )?;
     let fomo_received3 = vec_of_buckets3[0].amount(&mut env)?;
@@ -140,6 +146,8 @@ fn test_fomo_staking() -> Result<(), RuntimeError> {
     let vec_of_buckets4 = fomo_staking.remove_stake(
         staked_fomo_bucket4,
         vec![],
+        350,
+        false,
         &mut env
     )?;
     let fomo_received4 = vec_of_buckets4[0].amount(&mut env)?;

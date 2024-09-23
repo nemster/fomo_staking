@@ -265,6 +265,7 @@ mod fomo_staking {
             // Prepare a HashMap to store the total the user must receive per each non FOMO coin
             let mut totals: HashMap<ResourceAddress, PreciseDecimal> = HashMap::with_capacity(MAX_BUCKETS);
 
+            // New value to set in the stake NFT
             let mut new_last_airdrop_id = self.last_airdrop_id;
 
             let mut processed_airdrops: u64 = 0;
