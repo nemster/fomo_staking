@@ -30,6 +30,20 @@ CALL_FUNCTION
 ;
 ```
 
+### Instantiate (Mainnet)
+```
+CALL_FUNCTION
+    Address("package_rdx1p4xu77qwchj2fehwvlc0zjrcafx7q8t0fvt4c78kpnyewlft3rs32m")
+    "FomoStaking"
+    "new"
+    Address("<OWNER_BADGE>")
+    Address("<FOMO_RESOURCE_ADDRESS>")
+    <MINIMUM_STAKE_PERIOD>i64
+;
+```
+
+Package compiled with `radixdlt/scrypto-builder:v1.2.0`  
+
 ### Add stake
 ```
 CALL_METHOD
